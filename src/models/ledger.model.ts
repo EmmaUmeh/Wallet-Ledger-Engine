@@ -40,10 +40,17 @@ Ledger.init(
     }
 
   },
-  {
-    sequelize,
-    modelName: 'Ledger',
-  }
+  // {
+  //   sequelize,
+  //   modelName: 'Ledger',
+  // }
+
+   {
+        sequelize,
+        tableName: "ledgers",
+        timestamps: true,
+    }
+
 );
 
 module.exports = Ledger;

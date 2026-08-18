@@ -45,6 +45,12 @@ Transaction.init({
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW
     }
-})
+},
+ {
+        sequelize,
+        tableName: "transactions",
+        timestamps: true,
+    }
+)
 
 export { Transaction }
