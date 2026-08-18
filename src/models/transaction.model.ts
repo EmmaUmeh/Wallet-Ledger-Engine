@@ -46,3 +46,5 @@ Transaction.init({
         defaultValue: DataTypes.NOW
     }
 })
+
+export { Transaction }
