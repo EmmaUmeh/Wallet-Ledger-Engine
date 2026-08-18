@@ -1,3 +1,7 @@
+import { DataTypes, Model } from "sequelize"
+import { sequelize } from "../config/database"
+
+
 class Wallet extends Model {}
 
 Wallet.init(

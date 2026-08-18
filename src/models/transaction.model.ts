@@ -1,18 +1,24 @@
-
-
-class Transaction extends Model { }
+import { DataTypes, Model } from "sequelize"
+import { sequelize } from "../config/database"
 
 
 export enum TransactionType {
-    CREDIT = "credit",
-    DEBIT = "debit",
+    TRANSFER = "transfer",
+    DEPOSIT = "deposit",
+    WITHDRAWAL = "withdrawal",
+    FEE = "fee",
+    REFUND = "refund",
 }
+
+class Transaction extends Model<any> { }
+
 
 Transaction.init({
     id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
         primaryKey: true,
-        autoIncrement: true
+        defaultValue: DataTypes.UUIDV4,
+        allowNull: false
     },
     currencyId: {
         type: DataTypes.UUID,
@@ -32,14 +38,14 @@ Transaction.init({
         type: DataTypes.STRING,
         allowNull: false
     },
-    status: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false
-    },
+    // status: {
+    //     type: DataTypes.BOOLEAN,
+    //     allowNull: false
+    // },
     type: {
         type: DataTypes.ENUM(...Object.values(TransactionType)),
         allowNull: false,
-        defaultValue: TransactionType.CREDIT
+        defaultValue: TransactionType.TRANSFER
     },
     timestamp: {
         type: DataTypes.DATE,

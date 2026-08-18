@@ -1,56 +1,41 @@
 const { Sequelize, DataTypes, Model } = require('sequelize');
 const sequelize = new Sequelize('sqlite::memory:');
 
-class Ledger extends Model {}
+class LedgerEntry extends Model {}
 
-Ledger.init(
-  {
-
-    reference: {
-      type: DataTypes.UUID,
-      allowNull: false,
+LedgerEntry.init({
+    id: {
+        type: DataTypes.UUID,
+        primaryKey: true,
+        defaultValue: DataTypes.UUIDV4,
     },
-    amount: {
+
+    transactionId: {
+        type: DataTypes.UUID,
+        allowNull: false,
+    },
+
+    accountId: {
+        type: DataTypes.UUID,
+        allowNull: false,
+    },
+
+    debit: {
         type: DataTypes.BIGINT,
         allowNull: false,
+        defaultValue: 0,
     },
-    balanceBefore: {
+
+    credit: {
         type: DataTypes.BIGINT,
         allowNull: false,
+        defaultValue: 0,
     },
-    balanceAfter:{
-        type: DataTypes.BIGINT,
-        allowNull: false,
-    },
-    currencyId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-    },
-    type: {
-     type: DataTypes.ENUM('credit', 'debit', 'fee', 'vat'),
-     allowNull: false,
-    },
-    metadata: {
-        type: DataTypes.JSON,
-    },
-    createdAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: DataTypes.NOW,
-    }
 
-  },
-  // {
-  //   sequelize,
-  //   modelName: 'Ledger',
-  // }
+}, {
+    sequelize,
+    tableName: "ledger",
+    timestamps: true,
+});
 
-   {
-        sequelize,
-        tableName: "ledgers",
-        timestamps: true,
-    }
-
-);
-
-module.exports = Ledger;
+export { LedgerEntry};
