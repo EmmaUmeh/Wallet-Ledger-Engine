@@ -1,3 +1,5 @@
+import { QueryTypes } from 'sequelize';
+import { sequelize } from '../config/database';
 import { Wallet } from '../models/wallet.model';
 
 class WalletService {
@@ -36,13 +38,31 @@ class WalletService {
             throw err;
         }
     }
+    
 
     static async getWalletById(walletId: string) {
-        return await Wallet.findOne({
-            where: {
-                id: walletId,
-            },
-        });
+
+        const [wallet] = await sequelize.query(
+            `SELECT *
+            FROM wallets
+            WHERE id = :walletId
+            LIMITS 1`,
+
+            {
+                replacements: {
+                    walletId,
+                },
+                type: QueryTypes.SELECT,
+            }
+        )
+
+        return wallet;
+
+        // return await Wallet.findOne({
+        //     where: {
+        //         id: walletId,
+        //     },
+        // });
     }
 }
 

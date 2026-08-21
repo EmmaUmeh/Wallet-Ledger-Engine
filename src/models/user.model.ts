@@ -3,30 +3,44 @@ import { sequelize } from "../config/database"
 
 
 class User extends Model{}
+User.init(
+    {
+        id: {
+            type: DataTypes.UUID,
+            allowNull: false,
+            primaryKey: true,
+            defaultValue: DataTypes.UUIDV4
+        },
 
-User.init({
-    id: {
-        type: DataTypes.UUID,
-        allowNull: false
+        password: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+
+        firstName: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+
+        lastName: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+
+        user_name: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        createdBy: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
     },
-    password: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    firstName: {
-        type: DataTypes.STRING,
-    },
-    lastName: {
-        type: DataTypes.STRING
-    },
-    createdBy: {
-        type: DataTypes.DATE,
-    }
-},
-{
+    {
         sequelize,
         tableName: "users",
         timestamps: true,
-})
+    }
+);
 
-export { User }
+export { User };

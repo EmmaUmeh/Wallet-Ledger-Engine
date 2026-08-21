@@ -12,14 +12,15 @@ import { sequelize } from "../config/database";
 
 
 const handleInternalTransfer = async (req: Request, res: Response) => {
+    // Peer to peer wallet transfer
     const {
-        userId,
         currency_id,
         reference,
-        receiver,
-        sender,
+        receiverVirtualAccountId,
         amount,
     } = req.body;
+
+    const userId = req.user.id as any;
 
     const userLock = getUserLock(userId);
 
@@ -64,8 +65,7 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
                 {
                     currencyId: currency_id,
                     amount,
-                    sender,
-                    receiver,
+                    receiverVirtualAccountId,
                     reference,
                     type: TransactionType.TRANSFER,
                 },
@@ -78,9 +78,10 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
             await LedgerEntry.create(
                 {
                     transactionId: txn?.id,
-                    accountId: sender,
+                    accountId: receiverVirtualAccountId,
                     currencyId: currency_id,
                     debit: amount,
+                    reference: reference,
                 },
                 {
                     transaction: dbTransaction,
@@ -91,9 +92,10 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
             await LedgerEntry.create(
                 {
                     transactionId: txn.id,
-                    accountId: receiver,
+                    accountId: receiverVirtualAccountId,
                     currencyId: currency_id,
                     credit: amount,
+                    reference: reference,
                 },
                 {
                     transaction: dbTransaction,
