@@ -7,6 +7,7 @@ import { getUserLock } from "../utils/lock.utils";
 import { Transaction, TransactionType } from "../models/transaction.model";
 import { LedgerEntry } from "../models/ledger.model";
 import { sequelize } from "../config/database";
+import { VirtualAccount } from "../models/virtual_account.model";
 
 
 
@@ -59,6 +60,22 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
                     .status(HTTPStatus.BAD_REQUEST)
                     .json("Transfer Request Failed. Please try again.");
             }
+
+            const virtual_account = await VirtualAccount.findOne({
+                where: {
+                    user_id: userId,
+                    currency_id: currency_id
+                },
+                transaction: dbTransaction,
+            })
+
+            if(!virtual_account) {
+             return res.status(HTTPStatus.BAD_REQUEST).json("Account not found. Please try again")
+            }
+
+            // if(wallet.)
+
+    
 
             // 3. Create the transaction record
             const txn: any = await Transaction.create(
