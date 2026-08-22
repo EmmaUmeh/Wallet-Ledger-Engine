@@ -1,8 +1,10 @@
 import { QueryTypes } from 'sequelize';
 import { sequelize } from '../config/database';
 import { Wallet } from '../models/wallet.model';
+import { VirtualAccount } from '../models/virtual_account.model';
 
 class WalletService {
+    
     static async createWallet(userId: string, currencyId: string) {
         const transaction = await sequelize.transaction();
 
@@ -24,26 +26,46 @@ class WalletService {
         }
     }
 
+    static async fetchVirtualAccount(userId: string, currencyId: string, transaction?: any) {
+
+            const virtual_account = await VirtualAccount.findOne({
+                where: {
+                    user_id: userId,
+                    currency_id: currencyId,
+                },
+                transaction
+            });
+            
+            if(!virtual_account) {
+              throw new Error("Invalid virtual account")
+            }
+
+            return virtual_account;
+    }
+
     
     
 
-    static async fetchAccountWallet(userId: string, currencyId: string) {
+    static async fetchAccountWallet(userId: string, currencyId: string, transaction?: any) {
 
             const wallet = await Wallet.findOne({
                 where: {
                     user_id: userId,
                     currency_id: currencyId,
                 },
+                transaction
             });
             
             if(!wallet) {
               throw new Error("Invalid source account")
             }
+
+            return wallet
     }
 
      static async checkBalance(userId: string, amount: string) {
-       const account = this.fetchAccountWallet(userId, amount)
-       return amount > account.balance;
+       const account = this.fetchAccountWallet(userId, amount) as any
+       return amount > account.balance as any;
     }
 
 

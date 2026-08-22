@@ -26,7 +26,7 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
     const userLock = getUserLock(userId);
 
     return userLock.runExclusive(async () => {
-        const dbTransaction = await sequelize.transaction();
+        const dbtransaction = await sequelize.transaction();
 
         try {
 
@@ -34,50 +34,39 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
                 where: {
                     id: userId,
                 },
-                transaction: dbTransaction,
-                lock: dbTransaction.LOCK.UPDATE,
+                transaction: dbtransaction,
+                lock: dbtransaction.LOCK.UPDATE,
             });
 
             if (!user) {
-                await dbTransaction.rollback();
-
                 return res
                     .status(HTTPStatus.NOT_FOUND)
                     .json("Resource not found.");
             }
 
             // 2. Check sender wallet
-            const wallet = await WalletService.checkWalletExists(
+            const wallet = await WalletService.fetchAccountWallet(
                 userId,
                 currency_id,
-                dbTransaction
+                dbtransaction
             );
 
-            if (!wallet) {
-                await dbTransaction.rollback();
 
-                return res
-                    .status(HTTPStatus.BAD_REQUEST)
-                    .json("Transfer Request Failed. Please try again.");
+            const balance = await WalletService.checkBalance(userId, amount)
+            
+            if(balance){
+                throw new Error("Insufficient balance")
             }
 
-            const virtual_account = await VirtualAccount.findOne({
-                where: {
-                    user_id: userId,
-                    currency_id: currency_id
-                },
-                transaction: dbTransaction,
-            })
 
-            if(!virtual_account) {
-             return res.status(HTTPStatus.BAD_REQUEST).json("Account not found. Please try again")
+            const virtual_account = await WalletService.fetchVirtualAccount(userId, currency_id, dbtransaction)
+
+
+           if(!virtual_account) {
+              throw new Error("Invalid virtual account")
             }
 
-            // if(wallet.)
-
-    
-
-            // 3. Create the transaction record
+          
             const txn: any = await Transaction.create(
                 {
                     currencyId: currency_id,
@@ -87,7 +76,7 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
                     type: TransactionType.TRANSFER,
                 },
                 {
-                    transaction: dbTransaction,
+                    transaction: dbtransaction,
                 }
             );
 
@@ -101,7 +90,7 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
                     reference: reference,
                 },
                 {
-                    transaction: dbTransaction,
+                    transaction: dbtransaction,
                 }
             );
 
@@ -115,12 +104,12 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
                     reference: reference,
                 },
                 {
-                    transaction: dbTransaction,
+                    transaction: dbtransaction,
                 }
             );
 
             // 6. Commit everything
-            await dbTransaction.commit();
+            await dbtransaction.commit();
 
             return res.status(HTTPStatus.OK).json({
                 message: "Transfer successful.",
@@ -128,7 +117,7 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
             });
 
         } catch (error) {
-            await dbTransaction.rollback();
+            await dbtransaction.rollback();
 
             console.error(
                 "Internal transfer failed:",
