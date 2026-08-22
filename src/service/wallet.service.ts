@@ -47,8 +47,6 @@ class WalletService {
     }
 
 
-    
-
     static async getWalletById(walletId: string) {
 
         const [wallet] = await sequelize.query(
@@ -71,6 +69,36 @@ class WalletService {
 
         return wallet;
     }
+
+    static async debitWallet(walletId: string, currency: string, amount: string) {
+      return sequelize.query(`
+        UPDATE wallets
+        SET balance = balance - :amount
+        WHERE id = :walletid
+        AND balance >= :amount;
+      `, {
+        replacements: {
+            amount,
+            walletId
+        },
+        type: QueryTypes.UPDATE
+      })
+    }
+
+    static async creditWallet(walletId: string, amount: string, currency?: string) {
+     return sequelize.query(`
+          UPDATE wallets
+          SET balance = balance + :amount
+          WHERE id = :walletId
+        `, {
+            replacements: {
+                walletId,
+                amount: amount
+            },
+            type: QueryTypes.UPDATE
+        })
+    }
+
 }
 
 export default WalletService;
