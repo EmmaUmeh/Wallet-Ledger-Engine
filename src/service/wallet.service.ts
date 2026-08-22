@@ -74,7 +74,7 @@ class WalletService {
       return sequelize.query(`
         UPDATE wallets
         SET balance = balance - :amount
-        WHERE id = :walletid, currency_id = :currencyId
+        WHERE id = :walletid AND currency_id = :currencyId
         AND balance >= :amount;
       `, {
         replacements: {
@@ -89,7 +89,7 @@ class WalletService {
      return sequelize.query(`
           UPDATE wallets
           SET balance = balance + :amount
-          WHERE id = :walletId, currency_id = :currencyId
+          WHERE id = :walletId AND currency_id = :currencyId
         `, {
             replacements: {
                 walletId,
