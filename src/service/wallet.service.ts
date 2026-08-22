@@ -24,20 +24,29 @@ class WalletService {
         }
     }
 
-    static async checkWalletExists(userId: string, currencyId: string, transaction: any) {
-        try {
+    
+    
+
+    static async fetchAccountWallet(userId: string, currencyId: string) {
+
             const wallet = await Wallet.findOne({
                 where: {
                     user_id: userId,
                     currency_id: currencyId,
                 },
-                transaction,
             });
-            return wallet !== null;
-        } catch (err) {
-            throw err;
-        }
+            
+            if(!wallet) {
+              throw new Error("Invalid source account")
+            }
     }
+
+     static async checkBalance(userId: string, amount: string) {
+       const account = this.fetchAccountWallet(userId, amount)
+       return amount > account.balance;
+    }
+
+
     
 
     static async getWalletById(walletId: string) {
@@ -56,13 +65,11 @@ class WalletService {
             }
         )
 
-        return wallet;
+         if(!wallet) {
+              throw new Error("Invalid source account")
+            }
 
-        // return await Wallet.findOne({
-        //     where: {
-        //         id: walletId,
-        //     },
-        // });
+        return wallet;
     }
 }
 
