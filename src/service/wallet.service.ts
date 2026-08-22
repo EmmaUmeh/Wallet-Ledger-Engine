@@ -70,11 +70,11 @@ class WalletService {
         return wallet;
     }
 
-    static async debitWallet(walletId: string, currency: string, amount: string) {
+    static async debitWallet(walletId: string, currencyId: string, amount: string) {
       return sequelize.query(`
         UPDATE wallets
         SET balance = balance - :amount
-        WHERE id = :walletid
+        WHERE id = :walletid, currency_id = :currencyId
         AND balance >= :amount;
       `, {
         replacements: {
@@ -85,15 +85,16 @@ class WalletService {
       })
     }
 
-    static async creditWallet(walletId: string, amount: string, currency?: string) {
+    static async creditWallet(walletId: string, amount: string, currencyId?: string) {
      return sequelize.query(`
           UPDATE wallets
           SET balance = balance + :amount
-          WHERE id = :walletId
+          WHERE id = :walletId, currency_id = :currencyId
         `, {
             replacements: {
                 walletId,
-                amount: amount
+                amount: amount,
+                currencyId
             },
             type: QueryTypes.UPDATE
         })
