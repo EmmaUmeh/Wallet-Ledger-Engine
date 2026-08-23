@@ -4,7 +4,7 @@ import { Wallet } from '../models/wallet.model';
 import { VirtualAccount } from '../models/virtual_account.model';
 
 class WalletService {
-    
+
     static async createWallet(userId: string, currencyId: string) {
         const transaction = await sequelize.transaction();
 
@@ -28,44 +28,44 @@ class WalletService {
 
     static async fetchVirtualAccount(userId: string, currencyId: string, transaction?: any) {
 
-            const virtual_account = await VirtualAccount.findOne({
-                where: {
-                    user_id: userId,
-                    currency_id: currencyId,
-                },
-                transaction
-            });
-            
-            if(!virtual_account) {
-              throw new Error("Invalid virtual account")
-            }
+        const virtual_account = await VirtualAccount.findOne({
+            where: {
+                user_id: userId,
+                currency_id: currencyId,
+            },
+            transaction
+        });
 
-            return virtual_account;
+        if (!virtual_account) {
+            throw new Error("Invalid virtual account")
+        }
+
+        return virtual_account;
     }
 
-    
-    
+
+
 
     static async fetchAccountWallet(userId: string, currencyId: string, transaction?: any) {
 
-            const wallet = await Wallet.findOne({
-                where: {
-                    user_id: userId,
-                    currency_id: currencyId,
-                },
-                transaction
-            });
-            
-            if(!wallet) {
-              throw new Error("Invalid source account")
-            }
+        const wallet = await Wallet.findOne({
+            where: {
+                user_id: userId,
+                currency_id: currencyId,
+            },
+            transaction
+        });
 
-            return wallet
+        if (!wallet) {
+            throw new Error("Invalid source account")
+        }
+
+        return wallet
     }
 
-     static async checkBalance(userId: string, amount: string) {
-       const account = this.fetchAccountWallet(userId, amount) as any
-       return amount > account.balance as any;
+    static async checkBalance(userId: string, amount: string) {
+        const account = this.fetchAccountWallet(userId, amount) as any
+        return amount > account.balance as any;
     }
 
 
@@ -85,30 +85,30 @@ class WalletService {
             }
         )
 
-         if(!wallet) {
-              throw new Error("Invalid source account")
-            }
+        if (!wallet) {
+            throw new Error("Invalid source account")
+        }
 
         return wallet;
     }
 
     static async debitWallet(walletId: string, currencyId: string, amount: string) {
-      return sequelize.query(`
+        return sequelize.query(`
         UPDATE wallets
         SET balance = balance - :amount
         WHERE id = :walletid AND currency_id = :currencyId
         AND balance >= :amount;
       `, {
-        replacements: {
-            amount,
-            walletId
-        },
-        type: QueryTypes.UPDATE
-      })
+            replacements: {
+                amount,
+                walletId
+            },
+            type: QueryTypes.UPDATE
+        })
     }
 
     static async creditWallet(walletId: string, amount: string, currencyId?: string) {
-     return sequelize.query(`
+        return sequelize.query(`
           UPDATE wallets
           SET balance = balance + :amount
           WHERE id = :walletId AND currency_id = :currencyId

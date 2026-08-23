@@ -53,8 +53,8 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
 
 
             const balance = await WalletService.checkBalance(userId, amount)
-            
-            if(balance){
+
+            if (balance) {
                 throw new Error("Insufficient balance")
             }
 
@@ -62,11 +62,11 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
             const virtual_account = await WalletService.fetchVirtualAccount(userId, currency_id, dbtransaction)
 
 
-           if(!virtual_account) {
-              throw new Error("Invalid virtual account")
+            if (!virtual_account) {
+                throw new Error("Invalid virtual account")
             }
 
-          
+
             const txn: any = await Transaction.create(
                 {
                     currencyId: currency_id,
