@@ -1,4 +1,4 @@
-import { QueryTypes } from 'sequelize';
+import { QueryTypes, Transaction } from 'sequelize';
 import { sequelize } from '../config/database';
 import { Wallet } from '../models/wallet.model';
 import { VirtualAccount } from '../models/virtual_account.model';
@@ -53,7 +53,8 @@ class WalletService {
                 user_id: userId,
                 currency_id: currencyId,
             },
-            transaction
+            transaction,
+            lock: transaction.LOCK.UPDATE
         });
 
         if (!wallet) {
@@ -63,10 +64,20 @@ class WalletService {
         return wallet
     }
 
-    static async checkBalance(userId: string, amount: string) {
-        const account = this.fetchAccountWallet(userId, amount) as any
-        return amount > account.balance as any;
-    }
+   static async checkBalance(
+    userId: string,
+    currencyId: string,
+    amount: string,
+    transaction?: Transaction
+) {
+    const account = await this.fetchAccountWallet(
+        userId,
+        currencyId,
+        transaction
+    ) as any;
+
+    return BigInt(account.balance) >= BigInt(amount);
+}
 
 
     static async getWalletById(walletId: string) {

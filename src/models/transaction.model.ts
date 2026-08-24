@@ -38,6 +38,11 @@ Transaction.init({
         type: DataTypes.STRING,
         allowNull: false
     },
+    reference: {
+    type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+    },
     // status: {
     //     type: DataTypes.BOOLEAN,
     //     allowNull: false

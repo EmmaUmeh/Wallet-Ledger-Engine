@@ -10,10 +10,8 @@ import { sequelize } from "../config/database";
 import { VirtualAccount } from "../models/virtual_account.model";
 
 
-
-
 const handleInternalTransfer = async (req: Request, res: Response) => {
-    // Peer to peer wallet transfer
+    // Peer to peer wallet transfer zero fee config
     const {
         currency_id,
         reference,
@@ -26,7 +24,7 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
     const userLock = getUserLock(userId);
 
     return userLock.runExclusive(async () => {
-        const dbtransaction = await sequelize.transaction();
+        const transaction = await sequelize.transaction();
 
         try {
 
@@ -34,8 +32,8 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
                 where: {
                     id: userId,
                 },
-                transaction: dbtransaction,
-                lock: dbtransaction.LOCK.UPDATE,
+                transaction: transaction,
+                lock: transaction.LOCK.UPDATE,
             });
 
             if (!user) {
@@ -48,18 +46,24 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
             const wallet = await WalletService.fetchAccountWallet(
                 userId,
                 currency_id,
-                dbtransaction
+                transaction
             );
 
 
-            const balance = await WalletService.checkBalance(userId, amount)
+            const balance = await WalletService.checkBalance(
+                userId,
+                currency_id,
+                amount,
+                transaction
+            );
+
 
             if (balance) {
                 throw new Error("Insufficient balance")
             }
 
 
-            const virtual_account = await WalletService.fetchVirtualAccount(userId, currency_id, dbtransaction)
+            const virtual_account = await WalletService.fetchVirtualAccount(userId, currency_id, transaction)
 
 
             if (!virtual_account) {
@@ -76,11 +80,20 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
                     type: TransactionType.TRANSFER,
                 },
                 {
-                    transaction: dbtransaction,
+                    transaction: transaction,
                 }
             );
 
-            // 4. Create debit entry for sender
+            const existing_transaction = await Transaction.findOne({
+                where: {
+                    reference
+                },
+                transaction: transaction,
+            });
+
+            if(existing_transaction) throw new Error("Transfer already processed.")
+
+            
             await LedgerEntry.create(
                 {
                     transactionId: txn?.id,
@@ -90,11 +103,11 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
                     reference: reference,
                 },
                 {
-                    transaction: dbtransaction,
+                    transaction: transaction,
                 }
             );
 
-            // 5. Create credit entry for receiver
+            
             await LedgerEntry.create(
                 {
                     transactionId: txn.id,
@@ -104,12 +117,11 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
                     reference: reference,
                 },
                 {
-                    transaction: dbtransaction,
+                    transaction: transaction,
                 }
             );
 
-            // 6. Commit everything
-            await dbtransaction.commit();
+            await transaction.commit();
 
             return res.status(HTTPStatus.OK).json({
                 message: "Transfer successful.",
@@ -117,13 +129,7 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
             });
 
         } catch (error) {
-            await dbtransaction.rollback();
-
-            console.error(
-                "Internal transfer failed:",
-                error
-            );
-
+            await transaction.rollback();
             return res
                 .status(HTTPStatus.INTERNAL_SERVER_ERROR)
                 .json("An error occurred while processing the transfer request.");
