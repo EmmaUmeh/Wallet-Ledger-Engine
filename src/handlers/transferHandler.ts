@@ -10,7 +10,6 @@ import { sequelize } from "../config/database";
 
 
 const handleInternalTransfer = async (req: Request, res: Response) => {
-    // Peer to peer wallet transfer zero fee config
     const {
         currency_id,
         reference,
@@ -18,8 +17,10 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
         amount,
     } = req.body;
 
-    if(!req.user){
-     return res.status(HTTPStatus.UNAUTHORIZED).json("Unauthorized.");
+    if (!req.user) {
+        return res
+            .status(HTTPStatus.UNAUTHORIZED)
+            .json("Unauthorized.");
     }
 
     const userId = req.user.id;
@@ -30,12 +31,11 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
         const transaction = await sequelize.transaction();
 
         try {
-
             const user = await User.findOne({
                 where: {
                     id: userId,
                 },
-                transaction: transaction,
+                transaction,
                 lock: transaction.LOCK.UPDATE,
             });
 
@@ -45,13 +45,19 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
                     .json("Resource not found.");
             }
 
-            // 2. Check sender wallet
             const wallet = await WalletService.fetchAccountWallet(
                 userId,
                 currency_id,
                 transaction
             );
 
+            if (!wallet) {
+                throw new Error("Wallet not found.");
+            }
+
+            if (wallet.status === "blocked" || wallet.status === "frozen") {
+                    throw new Error("Transaction unavailable for this account.");
+            }
 
             const balance = await WalletService.checkBalance(
                 userId,
@@ -60,19 +66,31 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
                 transaction
             );
 
-
             if (balance) {
-                throw new Error("Insufficient balance")
+                throw new Error("Insufficient balance");
             }
 
-
-            const virtual_account = await WalletService.fetchVirtualAccount(userId, currency_id, transaction)
-
+            const virtual_account =
+                await WalletService.fetchVirtualAccount(
+                    userId,
+                    currency_id,
+                    transaction
+                );
 
             if (!virtual_account) {
-                throw new Error("Invalid virtual account")
+                throw new Error("Invalid virtual account");
             }
 
+            const existing_transaction = await Transaction.findOne({
+                where: {
+                    reference,
+                },
+                transaction,
+            });
+
+            if (existing_transaction) {
+                throw new Error("Transfer already processed.");
+            }
 
             const txn: any = await Transaction.create(
                 {
@@ -83,44 +101,33 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
                     type: TransactionType.TRANSFER,
                 },
                 {
-                    transaction: transaction,
+                    transaction,
                 }
             );
 
-            const existing_transaction = await Transaction.findOne({
-                where: {
-                    reference
-                },
-                transaction: transaction,
-            });
-
-            if(existing_transaction) throw new Error("Transfer already processed.")
-
-            
             await LedgerEntry.create(
                 {
-                    transactionId: txn?.id,
-                    accountId: virtual_account?.id,
+                    transactionId: txn.id,
+                    accountId: virtual_account.id,
                     currencyId: currency_id,
                     debit: amount,
-                    reference: reference,
+                    reference,
                 },
                 {
-                    transaction: transaction,
+                    transaction,
                 }
             );
 
-            
             await LedgerEntry.create(
                 {
                     transactionId: txn.id,
                     accountId: receiverVirtualAccountId,
                     currencyId: currency_id,
                     credit: amount,
-                    reference: reference,
+                    reference,
                 },
                 {
-                    transaction: transaction,
+                    transaction,
                 }
             );
 
@@ -133,6 +140,7 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
 
         } catch (error) {
             await transaction.rollback();
+
             return res
                 .status(HTTPStatus.INTERNAL_SERVER_ERROR)
                 .json("Transfer Failed. Please Try again.");

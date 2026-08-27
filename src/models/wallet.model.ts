@@ -2,7 +2,13 @@ import { DataTypes, Model } from "sequelize"
 import { sequelize } from "../config/database"
 
 
-class Wallet extends Model {}
+class Wallet extends Model {
+  declare id: string;
+  declare user_id: string;
+  declare balance: bigint;
+  declare currency_id: number;
+  declare status: "active" | "frozen" | "blocked";
+}
 
 Wallet.init(
   {
