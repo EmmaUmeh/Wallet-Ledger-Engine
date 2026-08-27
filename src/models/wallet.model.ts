@@ -1,13 +1,18 @@
 import { DataTypes, Model } from "sequelize"
 import { sequelize } from "../config/database"
 
+export enum WalletStatus {
+  BLOCKED = "blocked",
+  ACTIVE = "active",
+  FROZEN = "frozen",
+}
 
 class Wallet extends Model {
   declare id: string;
   declare user_id: string;
   declare balance: bigint;
   declare currency_id: number;
-  declare status: "active" | "frozen" | "blocked";
+  declare status: WalletStatus;
 }
 
 Wallet.init(
@@ -35,15 +40,19 @@ Wallet.init(
     },
 
     status: {
-      type: DataTypes.ENUM('active', 'frozen', 'blocked'),
+      type: DataTypes.ENUM(
+        WalletStatus.ACTIVE,
+        WalletStatus.FROZEN,
+        WalletStatus.BLOCKED
+      ),
       allowNull: false,
-      defaultValue: 'active',
+      defaultValue: WalletStatus.ACTIVE,
     },
   },
   {
     sequelize,
-    modelName: 'Wallet',
-    tableName: 'wallets',
+    modelName: "Wallet",
+    tableName: "wallets",
     timestamps: true,
   }
 );

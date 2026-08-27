@@ -7,6 +7,7 @@ import { getUserLock } from "../utils/lock.utils";
 import { Transaction, TransactionType } from "../models/transaction.model";
 import { LedgerEntry } from "../models/ledger.model";
 import { sequelize } from "../config/database";
+import { WalletStatus } from "../models/wallet.model";
 
 
 const handleInternalTransfer = async (req: Request, res: Response) => {
@@ -52,11 +53,11 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
             );
 
             if (!wallet) {
-                throw new Error("Wallet not found.");
+                throw new Error("Unable to process this transaction.");
             }
 
-            if (wallet.status === "blocked" || wallet.status === "frozen") {
-                    throw new Error("Transaction unavailable for this account.");
+            if (wallet.status === WalletStatus.BLOCKED || wallet.status === WalletStatus.FROZEN) {
+                    throw new Error("Transfer unavailable for this account. Please contact support");
             }
 
             const balance = await WalletService.checkBalance(
