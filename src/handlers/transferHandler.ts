@@ -7,7 +7,6 @@ import { getUserLock } from "../utils/lock.utils";
 import { Transaction, TransactionType } from "../models/transaction.model";
 import { LedgerEntry } from "../models/ledger.model";
 import { sequelize } from "../config/database";
-import { VirtualAccount } from "../models/virtual_account.model";
 
 
 const handleInternalTransfer = async (req: Request, res: Response) => {
@@ -19,7 +18,11 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
         amount,
     } = req.body;
 
-    const userId = req.user.id as any;
+    if(!req.user){
+     return res.status(HTTPStatus.UNAUTHORIZED).json("Unauthorized.");
+    }
+
+    const userId = req.user.id;
 
     const userLock = getUserLock(userId);
 
@@ -97,7 +100,7 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
             await LedgerEntry.create(
                 {
                     transactionId: txn?.id,
-                    accountId: receiverVirtualAccountId,
+                    accountId: virtual_account?.id,
                     currencyId: currency_id,
                     debit: amount,
                     reference: reference,
@@ -132,7 +135,7 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
             await transaction.rollback();
             return res
                 .status(HTTPStatus.INTERNAL_SERVER_ERROR)
-                .json("An error occurred while processing the transfer request.");
+                .json("Transfer Failed. Please Try again.");
         }
     });
 };

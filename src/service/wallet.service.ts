@@ -1,8 +1,7 @@
 import { QueryTypes, Transaction } from 'sequelize';
 import { sequelize } from '../config/database';
 import { Wallet } from '../models/wallet.model';
-import { VirtualAccount } from '../models/virtual_account.model';
-
+import VirtualAccount from '../models/virtual_account.model';
 class WalletService {
 
     static async createWallet(userId: string, currencyId: string) {
