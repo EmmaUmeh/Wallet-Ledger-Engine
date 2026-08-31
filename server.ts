@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import { sequelize } from "./config/database";
+import route from "./routes/index";
 
 dotenv.config();
 
@@ -9,6 +10,7 @@ const app = express();
 const PORT = process?.env?.PORT;
 
 app.use(express.json());
+app.use("/v1", route)
 
 app.get("/health", (_req, res) => {
   res.json({

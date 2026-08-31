@@ -5,7 +5,7 @@ import { HTTPStatus } from "../utils/http.utils";
 import WalletService from "../service/wallet.service";
 import { getUserLock } from "../utils/lock.utils";
 import { Transaction, TransactionType } from "../models/transaction.model";
-import { LedgerEntry } from "../models/ledger.model";
+import LedgerEntry from "../models/ledger.model";
 import { sequelize } from "../config/database";
 import { WalletStatus } from "../models/wallet.model";
 
@@ -57,7 +57,7 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
             }
 
             if (wallet.status === WalletStatus.BLOCKED || wallet.status === WalletStatus.FROZEN) {
-                    throw new Error("Transfer unavailable for this account. Please contact support");
+                throw new Error("Transfer unavailable for this account. Please contact support");
             }
 
             const balance = await WalletService.checkBalance(
@@ -67,7 +67,7 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
                 transaction
             );
 
-            if (balance) {
+            if (!balance) {
                 throw new Error("Insufficient balance");
             }
 
@@ -92,6 +92,41 @@ const handleInternalTransfer = async (req: Request, res: Response) => {
             if (existing_transaction) {
                 throw new Error("Transfer already processed.");
             }
+
+            const receiverWallet =
+                await WalletService.fetchWalletByVirtualAccount(
+                    receiverVirtualAccountId,
+                    currency_id,
+                    transaction
+                );
+
+
+            if (wallet.id === receiverWallet.id) {
+                throw new Error("Cannot transfer to your own wallet");
+            }
+
+            const [debitWallet] = await WalletService.debitWallet(
+                wallet.id,
+                currency_id,
+                amount,
+                transaction
+            );
+
+            if (!debitWallet) {
+                throw new Error("Insufficient balance");
+            }
+
+            const [creditWallet] = await WalletService.creditWallet(
+                receiverWallet.id,
+                currency_id,
+                amount,
+                transaction
+            );
+
+            if (!creditWallet) {
+                throw new Error("Unable to credit receiver");
+            }
+
 
             const txn: any = await Transaction.create(
                 {

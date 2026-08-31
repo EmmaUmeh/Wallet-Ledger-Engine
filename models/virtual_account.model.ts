@@ -12,7 +12,7 @@ VirtualAccount.init({
     id: {
         type: DataTypes.UUID,
         allowNull: false,
-        primaryKey: false,
+        primaryKey: true,
         defaultValue: DataTypes.UUIDV4
     },
     user_id: {

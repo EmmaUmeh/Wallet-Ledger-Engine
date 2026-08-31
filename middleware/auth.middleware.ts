@@ -2,18 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { HTTPStatus } from "../utils/http.utils";
 
-interface AuthPayload {
-    id: string;
-}
-
-declare global {
-    namespace Express {
-        interface Request {
-            user?: AuthPayload;
-        }
-    }
-}
-
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
 
@@ -24,7 +12,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
     const token = authHeader.split(" ")[1];
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as AuthPayload;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
         req.user = decoded;
         next();
     } catch (error) {

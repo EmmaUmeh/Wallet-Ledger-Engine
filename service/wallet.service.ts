@@ -63,6 +63,44 @@ class WalletService {
         return wallet
     }
 
+        static async fetchWalletByVirtualAccount(
+        virtualAccountId: string,
+        currencyId: string,
+        transaction?: Transaction
+    ) {
+        // First find the receiver's virtual account
+        const virtualAccount = await VirtualAccount.findOne({
+            where: {
+                id: virtualAccountId,
+                currency_id: currencyId,
+            },
+            transaction,
+        });
+
+        if (!virtualAccount) {
+            throw new Error("Invalid receiver virtual account");
+        }
+
+        const wallet = await Wallet.findOne({
+            where: {
+                user_id: virtualAccount.user_id,
+                currency_id: currencyId,
+            },
+            transaction,
+
+            ...(transaction && {
+                lock: transaction.LOCK.UPDATE,
+            }),
+        });
+
+        if (!wallet) {
+            throw new Error("Receiver wallet not found");
+        }
+
+        return wallet;
+    }
+
+
    static async checkBalance(
     userId: string,
     currencyId: string,
@@ -102,7 +140,7 @@ class WalletService {
         return wallet;
     }
 
-    static async debitWallet(walletId: string, currencyId: string, amount: string) {
+    static async debitWallet(walletId: string, currencyId: string, amount: string, transaction: Transaction) {
         return sequelize.query(`
         UPDATE wallets
         SET balance = balance - :amount
@@ -111,13 +149,16 @@ class WalletService {
       `, {
             replacements: {
                 amount,
-                walletId
+                walletId,
+                currencyId
             },
+            transaction,
             type: QueryTypes.UPDATE
+            
         })
     }
 
-    static async creditWallet(walletId: string, amount: string, currencyId?: string) {
+    static async creditWallet(walletId: string, amount: string, currencyId: string, transaction: Transaction) {
         return sequelize.query(`
           UPDATE wallets
           SET balance = balance + :amount
@@ -128,6 +169,7 @@ class WalletService {
                 amount: amount,
                 currencyId
             },
+            transaction,
             type: QueryTypes.UPDATE
         })
     }
