@@ -1,11 +1,11 @@
-import { LedgerEntry } from "../models/ledger.model";
+import LedgerEntry  from "../models/ledger.model";
 import { Wallet } from "../models/wallet.model";
 import { Op } from "sequelize";
 import { sequelize } from "../config/database";
 
 class ReconciliationService {
   static async reconcileWallet() {
-    const BATCH_SIZE = 500;
+    const BATCH_SIZE = 200;
 
     const totalWallets = await Wallet.count();
 
